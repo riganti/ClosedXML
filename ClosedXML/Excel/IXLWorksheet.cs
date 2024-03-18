@@ -376,7 +376,7 @@ namespace ClosedXML.Excel
 
         IXLRange SortLeftToRight(XLSortOrder sortOrder = XLSortOrder.Ascending, Boolean matchCase = false, Boolean ignoreBlanks = true);
 
-        //IXLCharts Charts { get; }
+        IXLCharts Charts { get; }
 
         Boolean ShowFormulas { get; set; }
 
@@ -479,5 +479,9 @@ namespace ClosedXML.Excel
         IXLPicture AddPicture(String imageFile);
 
         IXLPicture AddPicture(String imageFile, String name);
+
+        IXLChart AddChart(IXLChart chart);
+
+        IXLChart Chart(Int32 index);
     }
 }
