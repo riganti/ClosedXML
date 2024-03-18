@@ -20,6 +20,7 @@ using Formula = DocumentFormat.OpenXml.Spreadsheet.Formula;
 using Op = DocumentFormat.OpenXml.CustomProperties;
 using X14 = DocumentFormat.OpenXml.Office2010.Excel;
 using Xdr = DocumentFormat.OpenXml.Drawing.Spreadsheet;
+using Cdr = DocumentFormat.OpenXml.Drawing.Charts;
 using static ClosedXML.Excel.XLPredefinedFormat.DateTime;
 
 namespace ClosedXML.Excel
@@ -557,72 +558,155 @@ namespace ClosedXML.Excel
 
                 foreach (var anchor in drawingsPart.WorksheetDrawing.ChildElements)
                 {
-                    var imgId = GetImageRelIdFromAnchor(anchor);
-
-                    //If imgId is null, we're probably dealing with a TextBox (or another shape) instead of a picture
-                    if (imgId == null) continue;
-
-                    var imagePart = drawingsPart.GetPartById(imgId);
-                    using (var stream = imagePart.GetStream())
-                    using (var ms = new MemoryStream())
+                    if (GetImageRelIdFromAnchor(anchor) is string imgId)
                     {
-                        stream.CopyTo(ms);
-                        var vsdp = GetPropertiesFromAnchor(anchor);
-
-                        var picture = ws.AddPicture(ms, vsdp.Name, Convert.ToInt32(vsdp.Id.Value)) as XLPicture;
-                        picture.RelId = imgId;
-
-                        Xdr.ShapeProperties spPr = anchor.Descendants<Xdr.ShapeProperties>().First();
-                        picture.Placement = XLPicturePlacement.FreeFloating;
-
-                        if (spPr?.Transform2D?.Extents?.Cx.HasValue ?? false)
-                            picture.Width = ConvertFromEnglishMetricUnits(spPr.Transform2D.Extents.Cx, ws.Workbook.DpiX);
-
-                        if (spPr?.Transform2D?.Extents?.Cy.HasValue ?? false)
-                            picture.Height = ConvertFromEnglishMetricUnits(spPr.Transform2D.Extents.Cy, ws.Workbook.DpiY);
-
-                        if (anchor is Xdr.AbsoluteAnchor)
-                        {
-                            var absoluteAnchor = anchor as Xdr.AbsoluteAnchor;
-                            picture.MoveTo(
-                                ConvertFromEnglishMetricUnits(absoluteAnchor.Position.X.Value, ws.Workbook.DpiX),
-                                ConvertFromEnglishMetricUnits(absoluteAnchor.Position.Y.Value, ws.Workbook.DpiY)
-                            );
-                        }
-                        else if (anchor is Xdr.OneCellAnchor)
-                        {
-                            var oneCellAnchor = anchor as Xdr.OneCellAnchor;
-                            var from = LoadMarker(ws, oneCellAnchor.FromMarker);
-                            picture.MoveTo(from.Cell, from.Offset);
-                        }
-                        else if (anchor is Xdr.TwoCellAnchor)
-                        {
-                            var twoCellAnchor = anchor as Xdr.TwoCellAnchor;
-                            var from = LoadMarker(ws, twoCellAnchor.FromMarker);
-                            var to = LoadMarker(ws, twoCellAnchor.ToMarker);
-
-                            if (twoCellAnchor.EditAs == null || !twoCellAnchor.EditAs.HasValue || twoCellAnchor.EditAs.Value == Xdr.EditAsValues.TwoCell)
-                            {
-                                picture.MoveTo(from.Cell, from.Offset, to.Cell, to.Offset);
-                            }
-                            else if (twoCellAnchor.EditAs.Value == Xdr.EditAsValues.Absolute)
-                            {
-                                var shapeProperties = twoCellAnchor.Descendants<Xdr.ShapeProperties>().FirstOrDefault();
-                                if (shapeProperties != null)
-                                {
-                                    picture.MoveTo(
-                                        ConvertFromEnglishMetricUnits(spPr.Transform2D.Offset.X, ws.Workbook.DpiX),
-                                        ConvertFromEnglishMetricUnits(spPr.Transform2D.Offset.Y, ws.Workbook.DpiY)
-                                    );
-                                }
-                            }
-                            else if (twoCellAnchor.EditAs.Value == Xdr.EditAsValues.OneCell)
-                            {
-                                picture.MoveTo(from.Cell, from.Offset);
-                            }
-                        }
+                        LoadPicture(ws, drawingsPart, anchor, imgId);
+                    }
+                    else if (GetChartRelIdFromAnchor(anchor) is string chartId)
+                    {
+                        LoadChart(ws, drawingsPart, anchor, chartId);
                     }
                 }
+            }
+        }
+
+        private IXLChart LoadChart(XLWorksheet ws, DrawingsPart drawingsPart, OpenXmlElement anchor, string chartId)
+        {
+            var chartPart = drawingsPart.GetPartById(chartId);
+
+            if (chartPart.RootElement is Cdr.ChartSpace chartSpace)
+            {
+                // TODO
+                //var chart = chartSpace.ChildElements.OfType<Cdr.Chart>().Single();
+
+                //if (chart.PlotArea?.ChildElements.OfType<Cdr.ScatterChart>().FirstOrDefault() is { } scatterChart)
+                //{
+                //    var result = new XLChart(ws)
+                //    {
+                //        ChartType = XLChartType.XYScatterSmoothLinesWithMarkers 
+                //    };
+
+                //    foreach (var series in scatterChart.ChildElements.OfType<Cdr.ScatterChartSeries>())
+                //    {
+                //        var xValues = series.ChildElements.OfType<Cdr.XValues>().First().NumberReference!.Formula!.Text;
+                //        var yValues = series.ChildElements.OfType<Cdr.YValues>().First().NumberReference!.Formula!.Text;
+
+                //        result.Series.Add(new XLChartSeries()
+                //        {
+                //            Name = series.SeriesText?.NumericValue?.Text,
+                //            XValues = xValues,
+                //            YValues = yValues
+                //        });
+                //    }
+
+                //    if (anchor is Xdr.AbsoluteAnchor absoluteAnchor)
+                //    {
+                //        result.Position.ColumnOffset = ConvertFromEnglishMetricUnits(absoluteAnchor.Position.X.Value, ws.Workbook.DpiX);
+                //        result.Position.RowOffset = ConvertFromEnglishMetricUnits(absoluteAnchor.Position.Y.Value, ws.Workbook.DpiY);
+                //    }
+                //    else if (anchor is Xdr.OneCellAnchor oneCellAnchor)
+                //    {
+                //        var from = LoadMarker(ws, oneCellAnchor.FromMarker);
+                //        result.Position.Column = from.Cell.Address.ColumnNumber;
+                //        result.Position.Row = from.Cell.Address.RowNumber;
+                //        result.Position.ColumnOffset = from.Offset.X;
+                //        result.Position.RowOffset = from.Offset.Y;
+                //    }
+                //    else if (anchor is Xdr.TwoCellAnchor twoCellAnchor)
+                //    {
+                //        var from = LoadMarker(ws, twoCellAnchor.FromMarker);
+                //        var to = LoadMarker(ws, twoCellAnchor.ToMarker);
+
+                //        if (twoCellAnchor.EditAs == null || !twoCellAnchor.EditAs.HasValue || twoCellAnchor.EditAs.Value == Xdr.EditAsValues.TwoCell)
+                //        {
+                //            picture.MoveTo(from.Cell, from.Offset, to.Cell, to.Offset);
+                //        }
+                //        else if (twoCellAnchor.EditAs.Value == Xdr.EditAsValues.Absolute)
+                //        {
+                //            var shapeProperties = twoCellAnchor.Descendants<Xdr.ShapeProperties>().FirstOrDefault();
+                //            if (shapeProperties != null)
+                //            {
+                //                picture.MoveTo(
+                //                    ConvertFromEnglishMetricUnits(spPr.Transform2D.Offset.X, ws.Workbook.DpiX),
+                //                    ConvertFromEnglishMetricUnits(spPr.Transform2D.Offset.Y, ws.Workbook.DpiY)
+                //                );
+                //            }
+                //        }
+                //        else if (twoCellAnchor.EditAs.Value == Xdr.EditAsValues.OneCell)
+                //        {
+                //            picture.MoveTo(from.Cell, from.Offset);
+                //        }
+                //    }
+
+                //    return result;
+                //}
+            }
+
+            return null;
+        }
+
+        private IXLPicture LoadPicture(XLWorksheet ws, DrawingsPart drawingsPart, OpenXmlElement anchor, string imgId)
+        {
+            var imagePart = drawingsPart.GetPartById(imgId);
+            using (var stream = imagePart.GetStream())
+            using (var ms = new MemoryStream())
+            {
+                stream.CopyTo(ms);
+                var vsdp = GetPropertiesFromAnchor(anchor);
+
+                var picture = ws.AddPicture(ms, vsdp.Name, Convert.ToInt32(vsdp.Id.Value)) as XLPicture;
+                picture.RelId = imgId;
+
+                Xdr.ShapeProperties spPr = anchor.Descendants<Xdr.ShapeProperties>().First();
+                picture.Placement = XLPicturePlacement.FreeFloating;
+
+                if (spPr?.Transform2D?.Extents?.Cx.HasValue ?? false)
+                    picture.Width = ConvertFromEnglishMetricUnits(spPr.Transform2D.Extents.Cx, ws.Workbook.DpiX);
+
+                if (spPr?.Transform2D?.Extents?.Cy.HasValue ?? false)
+                    picture.Height = ConvertFromEnglishMetricUnits(spPr.Transform2D.Extents.Cy, ws.Workbook.DpiY);
+
+                if (anchor is Xdr.AbsoluteAnchor)
+                {
+                    var absoluteAnchor = anchor as Xdr.AbsoluteAnchor;
+                    picture.MoveTo(
+                        ConvertFromEnglishMetricUnits(absoluteAnchor.Position.X.Value, ws.Workbook.DpiX),
+                        ConvertFromEnglishMetricUnits(absoluteAnchor.Position.Y.Value, ws.Workbook.DpiY)
+                    );
+                }
+                else if (anchor is Xdr.OneCellAnchor)
+                {
+                    var oneCellAnchor = anchor as Xdr.OneCellAnchor;
+                    var from = LoadMarker(ws, oneCellAnchor.FromMarker);
+                    picture.MoveTo(from.Cell, from.Offset);
+                }
+                else if (anchor is Xdr.TwoCellAnchor)
+                {
+                    var twoCellAnchor = anchor as Xdr.TwoCellAnchor;
+                    var from = LoadMarker(ws, twoCellAnchor.FromMarker);
+                    var to = LoadMarker(ws, twoCellAnchor.ToMarker);
+
+                    if (twoCellAnchor.EditAs == null || !twoCellAnchor.EditAs.HasValue || twoCellAnchor.EditAs.Value == Xdr.EditAsValues.TwoCell)
+                    {
+                        picture.MoveTo(from.Cell, from.Offset, to.Cell, to.Offset);
+                    }
+                    else if (twoCellAnchor.EditAs.Value == Xdr.EditAsValues.Absolute)
+                    {
+                        var shapeProperties = twoCellAnchor.Descendants<Xdr.ShapeProperties>().FirstOrDefault();
+                        if (shapeProperties != null)
+                        {
+                            picture.MoveTo(
+                                ConvertFromEnglishMetricUnits(spPr.Transform2D.Offset.X, ws.Workbook.DpiX),
+                                ConvertFromEnglishMetricUnits(spPr.Transform2D.Offset.Y, ws.Workbook.DpiY)
+                            );
+                        }
+                    }
+                    else if (twoCellAnchor.EditAs.Value == Xdr.EditAsValues.OneCell)
+                    {
+                        picture.MoveTo(from.Cell, from.Offset);
+                    }
+                }
+                return picture;
             }
         }
 

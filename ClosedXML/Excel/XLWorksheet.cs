@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using ClosedXML.Excel.InsertData;
 using static ClosedXML.Excel.XLProtectionAlgorithm;
+using DocumentFormat.OpenXml.Packaging;
 
 namespace ClosedXML.Excel
 {
@@ -1776,6 +1777,11 @@ namespace ClosedXML.Excel
             return Pictures.Add(imageFile, name);
         }
 
+        public IXLChart AddChart(IXLChart chart)
+        {
+            return Charts.Add(chart);
+        }
+
         public override Boolean IsEntireRow()
         {
             return true;
@@ -2118,5 +2124,6 @@ namespace ClosedXML.Excel
 
             return null;
         }
+
     }
 }

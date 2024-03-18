@@ -15,11 +15,9 @@ namespace ClosedXML.Excel.Drawings
     internal class XLPicture : IXLPicture
     {
         private const String InvalidNameChars = @":\/?*[]";
-        private Int32 _height;
         private Int32 _id;
         private String _name = string.Empty;
-        private Int32 _width;
-
+        
         internal XLPicture(XLWorksheet worksheet, Stream stream)
             : this(worksheet, stream, XLPictureFormat.Unknown)
         {
@@ -55,34 +53,7 @@ namespace ClosedXML.Excel.Drawings
             _id = freeId;
         }
 
-        public IXLCell BottomRightCell
-        {
-            get
-            {
-                return Markers[XLMarkerPosition.BottomRight].Cell;
-            }
-
-            private set
-            {
-                if (!value.Worksheet.Equals(this.Worksheet))
-                    throw new InvalidOperationException("A picture and its anchor cells must be on the same worksheet");
-
-                this.Markers[XLMarkerPosition.BottomRight] = new XLMarker(value);
-            }
-        }
-
         public XLPictureFormat Format { get; private set; } = XLPictureFormat.Unknown;
-
-        public Int32 Height
-        {
-            get { return _height; }
-            set
-            {
-                if (this.Placement == XLPicturePlacement.MoveAndSize)
-                    throw new ArgumentException("To set the height, the placement should be FreeFloating or Move");
-                _height = value;
-            }
-        }
 
         public Int32 Id
         {
@@ -98,17 +69,6 @@ namespace ClosedXML.Excel.Drawings
 
         public MemoryStream ImageStream { get; private set; }
 
-        public Int32 Left
-        {
-            get { return Markers[XLMarkerPosition.TopLeft]?.Offset.X ?? 0; }
-            set
-            {
-                if (this.Placement != XLPicturePlacement.FreeFloating)
-                    throw new ArgumentException("To set the left-hand offset, the placement should be FreeFloating");
-
-                Markers[XLMarkerPosition.TopLeft] = new XLMarker(Worksheet.Cell(1, 1), new Point(value, this.Top));
-            }
-        }
 
         public String Name
         {
@@ -127,51 +87,6 @@ namespace ClosedXML.Excel.Drawings
         public Int32 OriginalHeight { get; private set; }
 
         public Int32 OriginalWidth { get; private set; }
-
-        public XLPicturePlacement Placement { get; set; }
-
-        public Int32 Top
-        {
-            get { return Markers[XLMarkerPosition.TopLeft]?.Offset.Y ?? 0; }
-            set
-            {
-                if (this.Placement != XLPicturePlacement.FreeFloating)
-                    throw new ArgumentException("To set the top offset, the placement should be FreeFloating");
-
-                Markers[XLMarkerPosition.TopLeft] = new XLMarker(Worksheet.Cell(1, 1), new Point(this.Left, value));
-            }
-        }
-
-        public IXLCell TopLeftCell
-        {
-            get
-            {
-                return Markers[XLMarkerPosition.TopLeft].Cell;
-            }
-
-            private set
-            {
-                if (!value.Worksheet.Equals(this.Worksheet))
-                    throw new InvalidOperationException("A picture and its anchor cells must be on the same worksheet");
-
-                this.Markers[XLMarkerPosition.TopLeft] = new XLMarker(value);
-            }
-        }
-
-        public Int32 Width
-        {
-            get { return _width; }
-            set
-            {
-                if (this.Placement == XLPicturePlacement.MoveAndSize)
-                    throw new ArgumentException("To set the width, the placement should be FreeFloating or Move");
-                _width = value;
-            }
-        }
-
-        public IXLWorksheet Worksheet { get; }
-
-        internal IDictionary<XLMarkerPosition, XLMarker> Markers { get; private set; }
 
         internal String RelId { get; set; }
 
@@ -214,79 +129,6 @@ namespace ClosedXML.Excel.Drawings
             return CopyTo(Worksheet);
         }
 
-        public Point GetOffset(XLMarkerPosition position)
-        {
-            return Markers[position].Offset;
-        }
-
-        public IXLPicture MoveTo(Int32 left, Int32 top)
-        {
-            this.Placement = XLPicturePlacement.FreeFloating;
-            this.Left = left;
-            this.Top = top;
-            return this;
-        }
-
-        public IXLPicture MoveTo(IXLCell cell)
-        {
-            return MoveTo(cell, 0, 0);
-        }
-
-        public IXLPicture MoveTo(IXLCell cell, Int32 xOffset, Int32 yOffset)
-        {
-            return MoveTo(cell, new Point(xOffset, yOffset));
-        }
-
-        public IXLPicture MoveTo(IXLCell cell, Point offset)
-        {
-            if (cell == null) throw new ArgumentNullException(nameof(cell));
-            this.Placement = XLPicturePlacement.Move;
-            this.TopLeftCell = cell;
-            this.Markers[XLMarkerPosition.TopLeft].Offset = offset;
-            return this;
-        }
-
-        public IXLPicture MoveTo(IXLCell fromCell, IXLCell toCell)
-        {
-            return MoveTo(fromCell, 0, 0, toCell, 0, 0);
-        }
-
-        public IXLPicture MoveTo(IXLCell fromCell, Int32 fromCellXOffset, Int32 fromCellYOffset, IXLCell toCell, Int32 toCellXOffset, Int32 toCellYOffset)
-        {
-            return MoveTo(fromCell, new Point(fromCellXOffset, fromCellYOffset), toCell, new Point(toCellXOffset, toCellYOffset));
-        }
-
-        public IXLPicture MoveTo(IXLCell fromCell, Point fromOffset, IXLCell toCell, Point toOffset)
-        {
-            if (fromCell == null) throw new ArgumentNullException(nameof(fromCell));
-            if (toCell == null) throw new ArgumentNullException(nameof(toCell));
-            this.Placement = XLPicturePlacement.MoveAndSize;
-
-            this.TopLeftCell = fromCell;
-            this.Markers[XLMarkerPosition.TopLeft].Offset = fromOffset;
-
-            this.BottomRightCell = toCell;
-            this.Markers[XLMarkerPosition.BottomRight].Offset = toOffset;
-
-            return this;
-        }
-
-        public IXLPicture Scale(Double factor, Boolean relativeToOriginal = false)
-        {
-            return this.ScaleHeight(factor, relativeToOriginal).ScaleWidth(factor, relativeToOriginal);
-        }
-
-        public IXLPicture ScaleHeight(Double factor, Boolean relativeToOriginal = false)
-        {
-            this.Height = Convert.ToInt32((relativeToOriginal ? this.OriginalHeight : this.Height) * factor);
-            return this;
-        }
-
-        public IXLPicture ScaleWidth(Double factor, Boolean relativeToOriginal = false)
-        {
-            this.Width = Convert.ToInt32((relativeToOriginal ? this.OriginalWidth : this.Width) * factor);
-            return this;
-        }
 
         public IXLPicture WithPlacement(XLPicturePlacement value)
         {
@@ -356,6 +198,170 @@ namespace ClosedXML.Excel.Drawings
             var size = info.GetSizePx(Worksheet.Workbook.DpiX, Worksheet.Workbook.DpiY);
             _width = OriginalWidth = size.Width;
             _height = OriginalHeight = size.Height;
+        }
+
+        protected Int32 _height;
+        protected Int32 _width;
+
+        public IXLCell BottomRightCell
+        {
+            get
+            {
+                return Markers[XLMarkerPosition.BottomRight].Cell;
+            }
+
+            private set
+            {
+                if (!value.Worksheet.Equals(this.Worksheet))
+                    throw new InvalidOperationException("A picture and its anchor cells must be on the same worksheet");
+
+                this.Markers[XLMarkerPosition.BottomRight] = new XLMarker(value);
+            }
+        }
+
+        public Int32 Height
+        {
+            get { return _height; }
+            set
+            {
+                if (this.Placement == XLPicturePlacement.MoveAndSize)
+                    throw new ArgumentException("To set the height, the placement should be FreeFloating or Move");
+                _height = value;
+            }
+        }
+
+        public Int32 Left
+        {
+            get { return Markers[XLMarkerPosition.TopLeft]?.Offset.X ?? 0; }
+            set
+            {
+                if (this.Placement != XLPicturePlacement.FreeFloating)
+                    throw new ArgumentException("To set the left-hand offset, the placement should be FreeFloating");
+
+                Markers[XLMarkerPosition.TopLeft] = new XLMarker(Worksheet.Cell(1, 1), new Point(value, this.Top));
+            }
+        }
+
+
+        public XLPicturePlacement Placement { get; set; }
+
+        public Int32 Top
+        {
+            get { return Markers[XLMarkerPosition.TopLeft]?.Offset.Y ?? 0; }
+            set
+            {
+                if (this.Placement != XLPicturePlacement.FreeFloating)
+                    throw new ArgumentException("To set the top offset, the placement should be FreeFloating");
+
+                Markers[XLMarkerPosition.TopLeft] = new XLMarker(Worksheet.Cell(1, 1), new Point(this.Left, value));
+            }
+        }
+
+        public IXLCell TopLeftCell
+        {
+            get
+            {
+                return Markers[XLMarkerPosition.TopLeft].Cell;
+            }
+
+            private set
+            {
+                if (!value.Worksheet.Equals(this.Worksheet))
+                    throw new InvalidOperationException("A picture and its anchor cells must be on the same worksheet");
+
+                this.Markers[XLMarkerPosition.TopLeft] = new XLMarker(value);
+            }
+        }
+
+        public Int32 Width
+        {
+            get { return _width; }
+            set
+            {
+                if (this.Placement == XLPicturePlacement.MoveAndSize)
+                    throw new ArgumentException("To set the width, the placement should be FreeFloating or Move");
+                _width = value;
+            }
+        }
+
+        public IXLWorksheet Worksheet { get; protected set; } = null!;
+
+        protected internal IDictionary<XLMarkerPosition, XLMarker> Markers { get; protected set; } = null!;
+
+
+        public Point GetOffset(XLMarkerPosition position)
+        {
+            return Markers[position].Offset;
+        }
+
+        public IXLPicture MoveTo(Int32 left, Int32 top)
+        {
+            this.Placement = XLPicturePlacement.FreeFloating;
+            this.Left = left;
+            this.Top = top;
+            return this;
+        }
+
+        public IXLPicture MoveTo(IXLCell cell)
+        {
+            return MoveTo(cell, 0, 0);
+        }
+
+        public IXLPicture MoveTo(IXLCell cell, Int32 xOffset, Int32 yOffset)
+        {
+            return MoveTo(cell, new Point(xOffset, yOffset));
+        }
+
+        public IXLPicture MoveTo(IXLCell cell, Point offset)
+        {
+            if (cell == null) throw new ArgumentNullException(nameof(cell));
+            this.Placement = XLPicturePlacement.Move;
+            this.TopLeftCell = cell;
+            this.Markers[XLMarkerPosition.TopLeft].Offset = offset;
+            return this;
+        }
+
+        public IXLPicture MoveTo(IXLCell fromCell, IXLCell toCell)
+        {
+            return MoveTo(fromCell, 0, 0, toCell, 0, 0);
+        }
+
+        public IXLPicture MoveTo(IXLCell fromCell, Int32 fromCellXOffset, Int32 fromCellYOffset, IXLCell toCell, Int32 toCellXOffset, Int32 toCellYOffset)
+        {
+            return MoveTo(fromCell, new Point(fromCellXOffset, fromCellYOffset), toCell, new Point(toCellXOffset, toCellYOffset));
+        }
+
+        public IXLPicture MoveTo(IXLCell fromCell, Point fromOffset, IXLCell toCell, Point toOffset)
+        {
+            if (fromCell == null) throw new ArgumentNullException(nameof(fromCell));
+            if (toCell == null) throw new ArgumentNullException(nameof(toCell));
+            this.Placement = XLPicturePlacement.MoveAndSize;
+
+            this.TopLeftCell = fromCell;
+            this.Markers[XLMarkerPosition.TopLeft].Offset = fromOffset;
+
+            this.BottomRightCell = toCell;
+            this.Markers[XLMarkerPosition.BottomRight].Offset = toOffset;
+
+            return this;
+        }
+
+
+        public IXLPicture Scale(Double factor, Boolean relativeToOriginal = false)
+        {
+            return this.ScaleHeight(factor, relativeToOriginal).ScaleWidth(factor, relativeToOriginal);
+        }
+
+        public IXLPicture ScaleHeight(Double factor, Boolean relativeToOriginal = false)
+        {
+            this.Height = Convert.ToInt32((relativeToOriginal ? this.OriginalHeight : this.Height) * factor);
+            return this;
+        }
+
+        public IXLPicture ScaleWidth(Double factor, Boolean relativeToOriginal = false)
+        {
+            this.Width = Convert.ToInt32((relativeToOriginal ? this.OriginalWidth : this.Width) * factor);
+            return this;
         }
     }
 }

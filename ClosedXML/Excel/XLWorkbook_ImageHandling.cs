@@ -1,6 +1,7 @@
 #nullable disable
 
 using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Drawing.Charts;
 using DocumentFormat.OpenXml.Drawing.Spreadsheet;
 using DocumentFormat.OpenXml.Packaging;
 using System;
@@ -55,6 +56,12 @@ namespace ClosedXML.Excel
 
             var blipFill = anchor.Descendants<Xdr.BlipFill>().FirstOrDefault();
             return blipFill?.Blip?.Embed?.Value;
+        }
+
+        public static String GetChartRelIdFromAnchor(OpenXmlElement anchor)
+        {
+            var chartRef = anchor.Descendants<ChartReference>().FirstOrDefault();
+            return chartRef?.Id;
         }
 
         private static bool IsAllowedAnchor(OpenXmlElement anchor)

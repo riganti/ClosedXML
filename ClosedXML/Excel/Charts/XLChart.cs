@@ -1,7 +1,9 @@
 #nullable disable
 
+using ClosedXML.Excel.Drawings;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 
 namespace ClosedXML.Excel
@@ -14,7 +16,6 @@ namespace ClosedXML.Excel
         internal IXLWorksheet worksheet;
         public XLChart(XLWorksheet worksheet)
         {
-            Container = this;
             this.worksheet = worksheet;
             Int32 zOrder;
             if (worksheet.Charts.Any())
@@ -110,6 +111,8 @@ namespace ClosedXML.Excel
                     return XLBarGrouping.Standard;
             }
         }
+
+        public List<IXLChartSeries> Series { get; set; } = new List<IXLChartSeries>();
 
         public HashSet<XLChartType> ClusteredCharts = new HashSet<XLChartType>()
         {

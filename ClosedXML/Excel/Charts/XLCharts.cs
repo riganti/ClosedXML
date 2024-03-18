@@ -17,9 +17,10 @@ namespace ClosedXML.Excel
             return GetEnumerator();
         }
 
-        public void Add(IXLChart chart)
+        public IXLChart Add(IXLChart chart)
         {
             charts.Add(chart);
+            return chart;
         }
     }
 }
