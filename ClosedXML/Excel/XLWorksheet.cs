@@ -80,7 +80,7 @@ namespace ClosedXML.Excel
 
             XLHelper.ValidateSheetName(sheetName);
             _name = sheetName;
-            Charts = new XLCharts();
+            Charts = new XLCharts(this);
             ShowFormulas = workbook.ShowFormulas;
             ShowGridLines = workbook.ShowGridLines;
             ShowOutlineSymbols = workbook.ShowOutlineSymbols;
@@ -1790,6 +1790,16 @@ namespace ClosedXML.Excel
         public IXLPicture AddPicture(string imageFile, string name)
         {
             return Pictures.Add(imageFile, name);
+        }
+
+        public IXLChart Chart(Int32 index)
+        {
+            return Charts.Chart(index);
+        }
+
+        public IXLChart AddChart(IXLChart chart)
+        {
+            return Charts.Add(chart);
         }
 
         public override Boolean IsEntireRow()

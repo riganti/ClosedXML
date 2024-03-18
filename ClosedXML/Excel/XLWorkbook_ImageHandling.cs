@@ -7,6 +7,7 @@ using System;
 using System.Linq;
 
 using Xdr = DocumentFormat.OpenXml.Drawing.Spreadsheet;
+using Cdr = DocumentFormat.OpenXml.Drawing.Charts;
 
 namespace ClosedXML.Excel
 {
@@ -37,13 +38,7 @@ namespace ClosedXML.Excel
             if (!IsAllowedAnchor(anchor))
                 return null;
 
-            // Maybe we should not restrict here, and just search for all NonVisualDrawingProperties in an anchor?
-            var shape = anchor.Descendants<Xdr.Picture>().Cast<OpenXmlCompositeElement>().FirstOrDefault()
-                        ?? anchor.Descendants<Xdr.ConnectionShape>().Cast<OpenXmlCompositeElement>().FirstOrDefault();
-
-            if (shape == null) return null;
-
-            return shape
+            return anchor
                 .Descendants<Xdr.NonVisualDrawingProperties>()
                 .FirstOrDefault();
         }
@@ -55,6 +50,15 @@ namespace ClosedXML.Excel
 
             var blipFill = anchor.Descendants<Xdr.BlipFill>().FirstOrDefault();
             return blipFill?.Blip?.Embed?.Value;
+        }
+
+        public static String GetChartRelIdFromAnchor(OpenXmlElement anchor)
+        {
+            if (!IsAllowedAnchor(anchor))
+                return null;
+
+            var chart = anchor.Descendants<Cdr.ChartReference>().FirstOrDefault();
+            return chart?.Id?.Value;
         }
 
         private static bool IsAllowedAnchor(OpenXmlElement anchor)

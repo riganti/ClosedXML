@@ -1,6 +1,8 @@
 #nullable disable
 
 using System;
+using System.Drawing;
+using ClosedXML.Excel.Drawings;
 
 namespace ClosedXML.Excel
 {
@@ -81,6 +83,45 @@ namespace ClosedXML.Excel
     }
     public interface IXLChart: IXLDrawing<IXLChart>
     {
+        IXLCell BottomRightCell { get; }
+
+        Int32 Id { get; }
+
+        /// <summary>
+        /// Current width of the chart in pixels.
+        /// </summary>
+        Int32 Width { get; set; }
+
+        /// <summary>
+        /// Current height of the chart in pixels.
+        /// </summary>
+        Int32 Height { get; set; }
+
+        Int32 Left { get; set; }
+
+        XLPicturePlacement Placement { get; set; }
+
+        Int32 Top { get; set; }
+
+        IXLCell TopLeftCell { get; }
+
+        Point GetOffset(XLMarkerPosition position);
+
+        IXLChart MoveTo(Int32 left, Int32 top);
+
+        IXLChart MoveTo(IXLCell cell);
+
+        IXLChart MoveTo(IXLCell cell, Int32 xOffset, Int32 yOffset);
+
+        IXLChart MoveTo(IXLCell cell, Point offset);
+
+        IXLChart MoveTo(IXLCell fromCell, IXLCell toCell);
+
+        IXLChart MoveTo(IXLCell fromCell, Int32 fromCellXOffset, Int32 fromCellYOffset, IXLCell toCell, Int32 toCellXOffset, Int32 toCellYOffset);
+
+        IXLChart MoveTo(IXLCell fromCell, Point fromOffset, IXLCell toCell, Point toOffset);
+
+
         Boolean RightAngleAxes { get; set; }
         IXLChart SetRightAngleAxes();
         IXLChart SetRightAngleAxes(Boolean rightAngleAxes);
