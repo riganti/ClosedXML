@@ -1,6 +1,7 @@
 #nullable disable
 
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using ClosedXML.Excel.Drawings;
 
@@ -86,6 +87,8 @@ namespace ClosedXML.Excel
         IXLCell BottomRightCell { get; }
 
         Int32 Id { get; }
+
+        List<IXLSeries> Series { get; set; }
 
         /// <summary>
         /// Current width of the chart in pixels.
