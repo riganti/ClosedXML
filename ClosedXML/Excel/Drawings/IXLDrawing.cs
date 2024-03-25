@@ -13,8 +13,8 @@ namespace ClosedXML.Excel
         T SetVisible();
         T SetVisible(Boolean hidden);
                 
-        ////String Name { get; set; }
-        ////T SetName(String name);
+        String Name { get; set; }
+        T SetName(String name);
 
         ////String Description { get; set; }
         ////T SetDescription(String description);
