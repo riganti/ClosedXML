@@ -122,9 +122,9 @@ namespace ClosedXML.Excel
 
         internal IXLGraphicEngine GraphicEngine { get; }
 
-        internal double DpiX { get; }
+        public double DpiX { get; }
 
-        internal double DpiY { get; }
+        public double DpiY { get; }
 
         internal XLPivotCaches PivotCachesInternal { get; }
 
