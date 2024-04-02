@@ -128,6 +128,8 @@ namespace ClosedXML.Excel.Drawings
 
         public Int32 OriginalWidth { get; private set; }
 
+        public XLDrawingRegion? OriginalCropRegion { get; set; }
+
         public XLPicturePlacement Placement { get; set; }
 
         public Int32 Top

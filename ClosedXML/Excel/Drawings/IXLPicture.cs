@@ -54,6 +54,16 @@ namespace ClosedXML.Excel.Drawings
         IXLWorksheet Worksheet { get; }
 
         /// <summary>
+        /// If the original image is cropped, contains the crop region as a percentage (times a thousand)
+        /// of width and height from each edge (top, right, bottom, left).
+        /// </summary>
+        /// <remarks>
+        /// Percentages are represented as integer values. Each unit is a thousandth of a percentage point.
+        /// The crop acts on the source image (with <see cref="OriginalWidth"/> and <see cref="OriginalHeight"/>).
+        /// </remarks>
+        XLDrawingRegion? OriginalCropRegion { get; }
+
+        /// <summary>
         /// Create a copy of the picture on a different worksheet.
         /// </summary>
         /// <param name="targetSheet">The worksheet to which the picture will be copied.</param>
