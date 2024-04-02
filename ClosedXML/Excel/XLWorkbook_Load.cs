@@ -75,7 +75,7 @@ namespace ClosedXML.Excel
             var sheetId = 1u;
             foreach (var ws in WorksheetsInternal)
             {
-                // Ensure unique sheetId for each sheet. 
+                // Ensure unique sheetId for each sheet.
                 ws.SheetId = sheetId++;
                 ws.RelId = null;
 
@@ -605,7 +605,7 @@ namespace ClosedXML.Excel
                 }
             }
         }
-        
+
         private void LoadPicture(XLWorksheet ws, DrawingsPart drawingsPart, string imgId, OpenXmlElement anchor)
         {
             var imagePart = drawingsPart.GetPartById(imgId);
@@ -617,6 +617,18 @@ namespace ClosedXML.Excel
 
                 var picture = ws.AddPicture(ms, vsdp.Name, Convert.ToInt32(vsdp.Id.Value)) as XLPicture;
                 picture.RelId = imgId;
+
+                Xdr.BlipFill blipFill = anchor.Descendants<Xdr.BlipFill>().FirstOrDefault();
+                if (blipFill is not null && blipFill.SourceRectangle is not null)
+                {
+                    var srcRect = blipFill.SourceRectangle;
+                    picture.OriginalCropRegion = new XLDrawingRegion(
+                        srcRect.Top ?? 0,
+                        srcRect.Right ?? 0,
+                        srcRect.Bottom ?? 0,
+                        srcRect.Right ?? 0
+                    );
+                }
 
                 Xdr.ShapeProperties spPr = anchor.Descendants<Xdr.ShapeProperties>().First();
                 picture.Placement = XLPicturePlacement.FreeFloating;
@@ -676,14 +688,14 @@ namespace ClosedXML.Excel
             var vsdp = GetPropertiesFromAnchor(anchor);
 
             IXLChart chartObj = LoadChartObject(ws, chartPart);
-            
+
             var chart = ws.AddChart(chartObj) as XLChart;
             chart.SetName(vsdp.Name);
             chart.Id = Convert.ToInt32(vsdp.Id.Value);
             chart.RelId = chartId;
 
             chart.Placement = XLPicturePlacement.FreeFloating;
-            
+
             Xdr.Transform xfrm = anchor.Descendants<Xdr.Transform>().First();
             if (xfrm?.Extents?.Cx?.HasValue ?? false)
                 chartObj.Width = ConvertFromEnglishMetricUnits(xfrm.Extents.Cx, ws.Workbook.DpiX);
