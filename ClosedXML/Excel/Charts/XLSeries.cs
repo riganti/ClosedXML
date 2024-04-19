@@ -14,4 +14,6 @@ internal class XLSeries : IXLSeries
     public IXLRange XVal { get; set; }
 
     public IXLRange YVal { get; set; }
+
+    public XLColor OutlineColor { get; set; }
 }

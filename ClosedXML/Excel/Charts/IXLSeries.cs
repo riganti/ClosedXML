@@ -13,4 +13,6 @@ public interface IXLSeries
     IXLRange XVal { get; set; }
 
     IXLRange YVal { get; set; }
+
+    XLColor OutlineColor { get; set; }
 }

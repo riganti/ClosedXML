@@ -20,6 +20,7 @@ using Ap = DocumentFormat.OpenXml.ExtendedProperties;
 using Formula = DocumentFormat.OpenXml.Spreadsheet.Formula;
 using Op = DocumentFormat.OpenXml.CustomProperties;
 using X14 = DocumentFormat.OpenXml.Office2010.Excel;
+using Adr = DocumentFormat.OpenXml.Drawing;
 using Xdr = DocumentFormat.OpenXml.Drawing.Spreadsheet;
 using Cdr = DocumentFormat.OpenXml.Drawing.Charts;
 using static ClosedXML.Excel.XLPredefinedFormat.DateTime;
@@ -30,7 +31,6 @@ namespace ClosedXML.Excel
     using Drawings;
     using Op;
     using System.Drawing;
-    using System.Runtime.ConstrainedExecution;
 
     public partial class XLWorkbook
     {
@@ -766,8 +766,11 @@ namespace ClosedXML.Excel
                     throw new NotSupportedException("Unsupported scatter chart style")
             };
 
-            foreach (var series in scatterChart.ChildElements.OfType<Cdr.ScatterChartSeries>())
+            var seriesElements = scatterChart.ChildElements.OfType<Cdr.ScatterChartSeries>().ToArray();
+
+            for (int i = 0; i < seriesElements.Length; ++i)
             {
+                var series = seriesElements[i];
                 var xRange = series.ChildElements.OfType<Cdr.XValues>().First().NumberReference!.Formula!.Text;
                 var yRange = series.ChildElements.OfType<Cdr.YValues>().First().NumberReference!.Formula!.Text;
 
@@ -780,6 +783,14 @@ namespace ClosedXML.Excel
                     YVal = ws.Workbook.Range(yRange)
                 };
                 chartObject.Series.Add(seriesObj);
+
+                var outlineSolidFill = series.ChildElements.OfType<Xdr.ShapeProperties>().FirstOrDefault()
+                    ?.ChildElements.OfType<Adr.Outline>().FirstOrDefault()
+                    ?.ChildElements.OfType<Adr.SolidFill>().FirstOrDefault();
+                if (outlineSolidFill is not null)
+                {
+                    seriesObj.OutlineColor = ParseColorChoice(outlineSolidFill.FirstChild);
+                }
             }
 
             return chartObject;
@@ -2769,6 +2780,23 @@ namespace ClosedXML.Excel
         private static Exception MissingRequiredAttr(string attributeName)
         {
             throw new InvalidOperationException($"XML doesn't contain required attribute '{attributeName}'.");
+        }
+
+        private static XLColor ParseColorChoice(OpenXmlElement element)
+        {
+            return element switch
+            {
+                Adr.RgbColorModelPercentage => throw new NotImplementedException(),
+                Adr.RgbColorModelHex => throw new NotImplementedException(),
+                Adr.HslColor => throw new NotImplementedException(),
+                Adr.SystemColor => throw new NotImplementedException(),
+                Adr.SchemeColor => XLColor.FromTheme((XLThemeColor)Enum.Parse(
+                    typeof(XLThemeColor),
+                    element.GetAttribute("val", "http://schemas.openxmlformats.org/drawingml/2006/main").Value,
+                    true)),
+                Adr.PresetColor => throw new NotImplementedException(),
+                _ => throw new NotImplementedException()
+            };
         }
     }
 }
