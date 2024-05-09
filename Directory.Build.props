@@ -55,4 +55,24 @@
     <DefineConstants>$(AppVeyor)</DefineConstants>
   </PropertyGroup>
 
+  <!-- RIGANTI-specific setup -->
+  <ItemGroup>
+    <PackageReference Include="GitInfo" Version="3.3.4">
+      <IncludeAssets>all</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <GitVersion>false</GitVersion>
+    <GetPackageVersionDependsOn>$(GetPackageVersionDependsOn);PopulateClosedXMLVersion</GetPackageVersionDependsOn>
+  </PropertyGroup>
+
+  <Target Name="PopulateClosedXMLVersion" DependsOnTargets="GitVersion" BeforeTargets="GetAssemblyVersion;GenerateNuspec;GetPackageContents">
+    <PropertyGroup>
+      <Version>$(Version)-riganti-$(GitCommit)</Version>
+      <PackageVersion>$(Version)</PackageVersion>
+    </PropertyGroup>
+  </Target>
+
 </Project>
