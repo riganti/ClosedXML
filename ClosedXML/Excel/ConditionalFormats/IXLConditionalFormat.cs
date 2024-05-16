@@ -170,6 +170,8 @@ namespace ClosedXML.Excel
 
         Boolean Percent { get; }
 
+        Guid Id { get; }
+
         IXLConditionalFormat SetStopIfTrue();
 
         IXLConditionalFormat SetStopIfTrue(Boolean value);
