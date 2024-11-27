@@ -68,11 +68,5 @@
     <GetPackageVersionDependsOn>$(GetPackageVersionDependsOn);PopulateClosedXMLVersion</GetPackageVersionDependsOn>
   </PropertyGroup>
 
-  <Target Name="PopulateClosedXMLVersion" DependsOnTargets="GitVersion" BeforeTargets="GetAssemblyVersion;GenerateNuspec;GetPackageContents">
-    <PropertyGroup>
-      <Version>$(Version)-riganti-$(GitCommit)</Version>
-      <PackageVersion>$(Version)</PackageVersion>
-    </PropertyGroup>
-  </Target>
 
 </Project>
